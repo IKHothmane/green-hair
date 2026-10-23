@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react'
 import {
   ArrowDown, ArrowUpRight, Menu, X, Phone, MapPin, Clock3,
   Leaf, Scissors, Sparkles, Droplets, Share2
@@ -18,9 +19,9 @@ const copy = {
   es: {
     nav: ['Filosofía', 'Servicios', 'El salón', 'Contacto'],
     eyebrow: 'PELUQUERÍA ECOLÓGICA · AVEDA PARTNER · SEVILLA',
-    hero1: 'Naturaleza',
-    hero2: 'en tu cabello.',
-    heroText: 'Un salón para disfrutar con los cinco sentidos. Creatividad, estilo y productos orgánicos en el Casco Antiguo.',
+    hero1: 'Verde,',
+    hero2: 'consciente, tuyo.',
+    heroText: 'Peluquería ecológica y partner Aveda en el Casco Antiguo. Un espacio sensorial para cuidar tu cabello y el planeta.',
     book: 'Llamar para reservar',
     discover: 'Descubrir el salón',
     introKicker: 'UN NUEVO CONCEPTO DE PELUQUERÍA',
@@ -64,9 +65,9 @@ const copy = {
   en: {
     nav: ['Philosophy', 'Services', 'The salon', 'Contact'],
     eyebrow: 'ECO HAIR SALON · AVEDA PARTNER · SEVILLE',
-    hero1: 'Nature',
-    hero2: 'in your hair.',
-    heroText: 'A salon to enjoy with all five senses. Creativity, style and organic products in the historic centre.',
+    hero1: 'Green,',
+    hero2: 'conscious, yours.',
+    heroText: 'Eco hair salon and Aveda partner in the historic centre. A sensory space to care for your hair and the planet.',
     book: 'Call to book',
     discover: 'Discover the salon',
     introKicker: 'A NEW APPROACH TO HAIR',
@@ -110,9 +111,9 @@ const copy = {
   fr: {
     nav: ['Philosophie', 'Prestations', 'Le salon', 'Contact'],
     eyebrow: 'SALON ÉCOLOGIQUE · PARTENAIRE AVEDA · SÉVILLE',
-    hero1: 'La nature',
-    hero2: 'dans vos cheveux.',
-    heroText: 'Un salon à vivre avec les cinq sens. Créativité, style et produits bio au cœur du Casco Antiguo.',
+    hero1: 'Vert,',
+    hero2: 'conscient, à vous.',
+    heroText: 'Salon écologique et partenaire Aveda au Casco Antiguo. Un espace sensoriel pour soigner vos cheveux et la planète.',
     book: 'Appeler pour réserver',
     discover: 'Découvrir le salon',
     introKicker: 'UNE AUTRE FAÇON DE COIFFER',
@@ -169,6 +170,30 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const t = copy[lang]
   const root = useRef(null)
+  const heroRef = useRef(null)
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const springX = useSpring(mx, { stiffness: 120, damping: 18 })
+  const springY = useSpring(my, { stiffness: 120, damping: 18 })
+  const rotateY = useTransform(springX, [-0.5, 0.5], [-14, 14])
+  const rotateX = useTransform(springY, [-0.5, 0.5], [12, -12])
+  const floatX = useTransform(springX, [-0.5, 0.5], [-18, 18])
+  const floatY = useTransform(springY, [-0.5, 0.5], [-12, 12])
+  const floatXInv = useTransform(floatX, (v) => -v * 0.7)
+  const floatYInv = useTransform(floatY, (v) => -v * 0.6)
+
+  const onHeroMove = (e) => {
+    const el = heroRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    mx.set((e.clientX - rect.left) / rect.width - 0.5)
+    my.set((e.clientY - rect.top) / rect.height - 0.5)
+  }
+
+  const onHeroLeave = () => {
+    mx.set(0)
+    my.set(0)
+  }
 
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -176,14 +201,16 @@ function App() {
       if (prefersReduced) return
 
       const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-      tl.fromTo('.hero-visual img', { scale: 1.1 }, { scale: 1, duration: 1.5, ease: 'power2.out' }, 0)
-        .fromTo('.hero-kicker', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, 0.2)
-        .fromTo('.hero-title span', { y: 48, opacity: 0 }, { y: 0, opacity: 1, duration: 0.95, stagger: 0.12 }, 0.32)
-        .fromTo('.hero-copy', { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.75 }, 0.6)
-        .fromTo('.hero-actions', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, 0.75)
-        .fromTo('.hero-badge', { scale: 0.6, opacity: 0, rotate: -20 }, { scale: 1, opacity: 1, rotate: 10, duration: 0.85, ease: 'back.out(1.5)' }, 0.7)
+      tl.fromTo('.hero-kicker', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, 0.15)
+        .fromTo('.hero-title span', { y: 60, opacity: 0, rotateX: -55 }, { y: 0, opacity: 1, rotateX: 0, duration: 1.05, stagger: 0.14 }, 0.28)
+        .fromTo('.hero-copy', { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.75 }, 0.65)
+        .fromTo('.hero-actions', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, 0.8)
+        .fromTo('.hero-card-main', { z: -120, opacity: 0, rotateY: 28 }, { z: 0, opacity: 1, rotateY: 0, duration: 1.2, ease: 'power3.out' }, 0.25)
+        .fromTo('.hero-card-a', { z: -80, opacity: 0, x: 40 }, { z: 40, opacity: 1, x: 0, duration: 1, ease: 'power3.out' }, 0.45)
+        .fromTo('.hero-card-b', { z: -80, opacity: 0, x: -40 }, { z: 60, opacity: 1, x: 0, duration: 1, ease: 'power3.out' }, 0.55)
+        .fromTo('.hero-orbit', { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.9, ease: 'back.out(1.6)' }, 0.7)
 
-      gsap.to('.hero-visual img', {
+      gsap.to('.hero-card-main img', {
         yPercent: 8,
         ease: 'none',
         scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
@@ -251,7 +278,14 @@ function App() {
       </header>
 
       <main>
-        <section className="hero" id="home">
+        <section
+          className="hero"
+          id="home"
+          ref={heroRef}
+          onMouseMove={onHeroMove}
+          onMouseLeave={onHeroLeave}
+        >
+          <div className="hero-glow" aria-hidden="true" />
           <div className="hero-content">
             <p className="hero-kicker">{t.eyebrow}</p>
             <h1 className="hero-title">
@@ -268,13 +302,31 @@ function App() {
               </button>
             </div>
           </div>
-          <div className="hero-visual">
-            <img src="/images/hero.jpg" alt={t.heroAlt} fetchPriority="high" />
-            <div className="hero-shade" />
-            <div className="hero-badge" aria-hidden="true">
+
+          <div className="hero-stage">
+            <motion.div
+              className="hero-tilt"
+              style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+            >
+              <div className="hero-card hero-card-main">
+                <img src="/images/hero.jpg" alt={t.heroAlt} fetchPriority="high" />
+              </div>
+              <motion.div className="hero-card hero-card-a" style={{ x: floatX, y: floatY }}>
+                <img src="/images/maps-2.jpg" alt={t.imageAlt} />
+              </motion.div>
+              <motion.div className="hero-card hero-card-b" style={{ x: floatXInv, y: floatYInv }}>
+                <img src="/images/maps-3.jpg" alt={t.imageAlt} />
+              </motion.div>
+            </motion.div>
+            <motion.div
+              className="hero-orbit"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+              aria-hidden="true"
+            >
               <Leaf size={18} />
               <span>ECO · AVEDA</span>
-            </div>
+            </motion.div>
           </div>
         </section>
 
